@@ -101,4 +101,45 @@ router.delete('/delete/:id', verifyAuth, async (req, res, next) => {
 });
 
 
+router.get('/', verifyAuth, async function (req, res, next) {
+    const user = req.user;
+    const usersData = await db('products').select('*');
+    res.json(usersData);
+});
+
+
+
+router.get('/:id', verifyAuth, async function (req, res, next) {
+    const user_id = req.params.id;
+    try {
+        const user = await db('users').select('*').where('id', user_id).first();
+
+        if (!user) {
+            return res.status(400).send({
+                message: 'there is no user with given id'
+            });
+        }
+
+        if (user.email !== req.user.email) {
+            // tokenı alınan userın email ile aynı değil ise 
+            return res.status(400).send({
+                message: 'You are not authorized'
+            });
+        }
+        const products = db('products').select('*');
+        return res.status(200).send({
+            message: 'succesfull',
+            products
+        });
+
+    } catch (error) {
+        return res.status(400).send({
+            message: 'there is an error for to find user withb given id'
+        });
+
+    }
+});
+
+
+
 module.exports = router;
