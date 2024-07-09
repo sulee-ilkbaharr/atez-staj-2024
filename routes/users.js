@@ -5,22 +5,78 @@ const verifyAuth = require('./auth');
 const jwt = require('jsonwebtoken');
 var router = express.Router();
 
-/* GET users listing. */
+/* GET users with user own token. */
 router.get('/', verifyAuth, async function (req, res, next) {
   const user = req.user;
   const usersData = await db('users').select('*');
   res.json(usersData);
 });
 
-/* GET users listing. */
-router.get('/:id', async function (req, res, next) {
-  const usersData = await db('users').select('*');
-  res.json(usersData);
+/* GET users with given id. */
+router.get('/:id', verifyAuth, async function (req, res, next) {
+  const user_id = req.params.id;
+  try {
+    const user = await db('users').select('*').where('id', user_id).first();
+
+    if (!user) {
+      return res.status(400).send({
+        message: 'there is no user with given id'
+      });
+    }
+
+    if (user.email !== req.user.email) {
+      // tokenı alınan userın email ile aynı değil ise 
+      return res.status(400).send({
+        message: 'You are not authorized'
+      });
+    }
+    return res.status(200).send({
+      message: 'succesfull',
+      user
+    });
+
+  } catch (error) {
+    return res.status(400).send({
+      message: 'there is an error for to find user withb given id'
+    });
+
+  }
+});
+
+/* user can delete their own account */
+router.delete('/delete/:id', verifyAuth, async (req, res, next) => {
+  const user_id = req.params.id;
+
+  try {
+    const user = await db('users').select('*').where('id', user_id).first();
+    if (!user) {
+      return res.status(400).send({
+        message: 'There is no user with the given id'
+      });
+    }
+
+    if (user.email !== req.user.email) {
+      return res.status(400).send({
+        message: 'You are not authorized to delete this account'
+      });
+    }
+
+    await db('users').where('id', user_id).del();
+
+    return res.status(200).send({
+      message: 'Your account has been deleted successfully'
+    });
+  } catch (error) {
+    return res.status(500).send({
+      message: 'An error occurred while deleting the account'
+    });
+  }
 });
 
 
 router.post('/signup', async (req, res, next) => {
-  const { username, password, name, surname, email } = req.body;
+  const { username, password, name, surname, email, user_type } = req.body;
+  //user_type= user | company      =>usertype company olan firmalar sadece ürün ekleyebilir.
   if (!email && !password) {
     return res.status(400).send({
       message: 'email or password missing',
@@ -39,7 +95,7 @@ router.post('/signup', async (req, res, next) => {
   const cryptedPassword = await bcrypt.hash(password, 8);
 
   await db('users').insert(
-    { username, password: cryptedPassword, name, surname, email }
+    { username, password: cryptedPassword, name, surname, email, user_type }
   )
 
 
@@ -84,6 +140,7 @@ router.post('/login', async function (req, res) {
   })
 
 })
+
 
 
 //asynchronous
