@@ -8,6 +8,7 @@ var router = express.Router();
 /* GET users with user own token. */
 router.get('/', verifyAuth, async function (req, res, next) {
   const user = req.user;
+  console.log('USER:', user) //USER: { email: 'atez@gmail.com', iat: 1720600717 }
   const usersData = await db('users').select('*');
   res.json(usersData);
 });
@@ -37,7 +38,7 @@ router.get('/:id', verifyAuth, async function (req, res, next) {
 
   } catch (error) {
     return res.status(400).send({
-      message: 'there is an error for to find user withb given id'
+      message: 'there is an error for to find user with given id'
     });
 
   }

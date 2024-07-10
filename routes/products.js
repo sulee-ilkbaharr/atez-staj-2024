@@ -109,35 +109,70 @@ router.get('/', verifyAuth, async function (req, res, next) {
 
 
 
+/*serach with porduct id*/
 router.get('/:id', verifyAuth, async function (req, res, next) {
-    const user_id = req.params.id;
+    const user_email = req.user.email;
+    const product_id = req.params.id;
+    console.log(user_email);
+    console.log(product_id);
     try {
-        const user = await db('users').select('*').where('id', user_id).first();
-
+        const user = await db('users').select('*').where('email', user_email).first();
         if (!user) {
+            res.status(400).send({
+                message: 'You are not authorized'
+            })
+        }
+
+        const product = await db('products').select('*').where('id', product_id).first();
+        if (!product) {
             return res.status(400).send({
-                message: 'there is no user with given id'
+                message: 'there is no product with given id'
             });
         }
 
-        if (user.email !== req.user.email) {
-            // tokenı alınan userın email ile aynı değil ise 
-            return res.status(400).send({
-                message: 'You are not authorized'
-            });
-        }
-        const products = db('products').select('*');
         return res.status(200).send({
             message: 'succesfull',
-            products
+            product
         });
 
     } catch (error) {
         return res.status(400).send({
-            message: 'there is an error for to find user withb given id'
+            message: 'there is an error for to find product with given id'
         });
 
     }
+});
+
+
+router.get('/list/:searchParam', verifyAuth, async (req, res, next) => {
+    const user_email = req.user.email;
+    const searchParam = req.params.searchParam;
+    console.log('USER_EMAİL:', user_email);
+
+    try {
+        const user = await db('users').select('*').where('email', user_email).first();
+        if (!user) {
+            return res.status(400).send('You have to be authorize first');
+        }
+
+        const product = await db('products').select('*').where('product_name', 'like', `%${searchParam}%`).first();
+        if (!product) {
+            return res.status(400).send('There is no product with this search parameter');
+        }
+
+        return res.status(200).send({
+            message: 'Then product has been found according to the given search parameter.',
+            product
+        });
+
+
+    } catch (error) {
+        res.status(400).send({
+            message: 'UPPSS, something seems wrong!!'
+        });
+
+    }
+
 });
 
 
