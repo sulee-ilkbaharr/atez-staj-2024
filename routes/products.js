@@ -4,7 +4,7 @@ var router = express.Router();
 const db = require('../db/knex.db');
 
 router.post('/add', verifyAuth, async function (req, res, next) {
-    const { product_name } = req.body;
+    const { product_name, description, price } = req.body;
     const email = req.user.email;
 
     try {
@@ -20,20 +20,20 @@ router.post('/add', verifyAuth, async function (req, res, next) {
             });
         }
 
-        const product = await db('products').insert({ product_name });
+        const product = await db('products').insert({ product_name, description, price });
 
         return res.status(200).send({
             message: 'product has been added successfully',
-            product: product[0]
+            product
         });
 
     } catch (error) {
-        res.status(400).send('There is an error')
+        res.status(400).send('There is an error', error)
     }
 });
 
 router.patch('/update/:id', verifyAuth, async function (req, res, next) {
-    const { product_name } = req.body;
+    const { product_name, description, price } = req.body;
     const email = req.user.email;
     const id = req.params.id;
 
@@ -54,7 +54,7 @@ router.patch('/update/:id', verifyAuth, async function (req, res, next) {
         if (!product) {
             return res.status(400).send('there is no product with this given id');
         }
-        const updated_product = await db('products').select('*').where('id', id).update({ product_name });
+        const updated_product = await db('products').select('*').where('id', id).update({ product_name, description, price });
 
         return res.status(200).send({
             message: 'product has been updated successfully',
@@ -103,8 +103,8 @@ router.delete('/delete/:id', verifyAuth, async (req, res, next) => {
 
 router.get('/', verifyAuth, async function (req, res, next) {
     const user = req.user;
-    const usersData = await db('products').select('*');
-    res.json(usersData);
+    const productsData = await db('products').select('*');
+    res.json(productsData);
 });
 
 
