@@ -5,6 +5,7 @@ const verifyAuth = require('./auth');
 const jwt = require('jsonwebtoken');
 var router = express.Router();
 
+
 /* GET users with user own token. */
 router.get('/', verifyAuth, async function (req, res, next) {
   const user = req.user;
